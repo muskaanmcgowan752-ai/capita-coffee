@@ -197,7 +197,7 @@ const CONFIG={
  logo:"https://i.ibb.co/8DkPzB7r/0095bb0a-bbbd-4aca-939d-4dc2788e051e.jpg", // si l'image ne charge pas, le logo est masqué
  // image = photo de la capsule ; machineImage = photo des machines compatibles (affichée quand on sélectionne)
  whatsapp:"[WHATSAPP_NUMBER]",
- orderEndpoint:"[ORDER_ENDPOINT]", // URL (Google Sheets/webhook/API) qui reçoit la commande en POST JSON
+ orderEndpoint:"https://script.google.com/macros/s/AKfycbxbSklmegbOvPJYv6YJCtl4Ke-jqUGyoOWnFzHBrTsmNxlDw_LaQBZC2ek-XCTbV-qpbA/exec", // URL (Google Sheets/webhook/API) qui reçoit la commande en POST JSON
  pixels:{meta:"[META_PIXEL_ID]",tiktok:"[TIKTOK_PIXEL_ID]",ga4:"[GA4_ID]",googleAds:"[GOOGLE_ADS_ID]"},
  googleAdsConversionLabel:"[GOOGLE_ADS_ID]/[LABEL]",
  products:[
@@ -291,12 +291,25 @@ $("form").addEventListener("submit",async e=>{
  const order={name:$("name").value.trim(),phone:normPhone($("phone").value),address:$("address").value.trim(),
   product:p.name,productId:p.id,variant:state.variant||null,price:p.price,payment:"COD",createdAt:new Date().toISOString()};
  const btn=$("submit");btn.disabled=true;btn.textContent="كنصيفطو الطلب...";
- try{
-  if(ok(CONFIG.orderEndpoint)){
-   const r=await fetch(CONFIG.orderEndpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(order)});
-   if(!r.ok)throw new Error("HTTP "+r.status)}
-  else console.warn("[ORDER_ENDPOINT] non configuré — commande non envoyée:",order);
- }catch(err){btn.disabled=false;btn.textContent="🛒 نأكد الطلب ديالي";alert("وقع مشكل فالإرسال. عاود حاول من فضلك.");return}
+try {
+  const response = await fetch(CONFIG.orderEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify(order)
+  });
+
+  console.log("Order sent:", order);
+  console.log("Response:", await response.text());
+
+} catch (error) {
+  console.error("Order error:", error);
+  btn.disabled = false;
+  btn.textContent = "🛒 نأكد الطلب ديالي";
+  alert("وقع مشكل فالإرسال. عاود حاول من فضلك.");
+  return;
+}
  track("Lead",{content_name:p.name});track("OrderSubmitted",{content_name:p.name,currency:"MAD"});
  const rows=[["الاسم",order.name],["الهاتف",order.phone],["العنوان",order.address],["المنتوج",order.product+(order.variant?" — "+order.variant:"")],["الثمن",order.price]];
  const sum=$("sum");sum.innerHTML="";
